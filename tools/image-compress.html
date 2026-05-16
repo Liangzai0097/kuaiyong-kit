@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>免费在线图片压缩工具 - 浏览器本地压缩，不上传服务器 | 快用工具箱</title>
+<meta name="description" content="免费在线图片压缩工具，支持 JPG、PNG、WebP 格式，可调节压缩质量与尺寸。所有图片在浏览器本地压缩，绝不上传服务器，安全无忧。压缩后体积可减少 50%-90%。">
+<meta name="keywords" content="图片压缩,在线图片压缩,JPG压缩,PNG压缩,图片大小压缩,免费图片压缩,图片瘦身">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://example.github.io/tools/image-compress.html">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="logo" href="/">快用工具箱</a>
+    <nav>
+      <a href="/">首页</a>
+      <a href="/tools/image-compress.html">图片压缩</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <article class="tool-page">
+    <h1>图片压缩</h1>
+    <p class="subtitle">上传图片即可在浏览器本地压缩，文件不会离开你的电脑。支持 JPG、PNG、WebP。</p>
+
+    <div id="uploadArea" class="upload-area">
+      <p>点击选择图片，或将图片拖到这里</p>
+      <button class="primary-btn" type="button">选择图片</button>
+      <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+    </div>
+
+    <div id="workspace" hidden>
+      <div class="controls">
+        <div class="control-group">
+          <label>压缩质量：<span id="qualityValue" class="value">0.8</span></label>
+          <input id="quality" type="range" min="0.1" max="1" step="0.05" value="0.8">
+        </div>
+        <div class="control-group">
+          <label>最大宽度（px，0 表示不缩放）</label>
+          <input id="maxWidth" type="range" min="0" max="4000" step="100" value="0">
+          <div><span id="maxWidthValue" class="value">不缩放</span></div>
+        </div>
+        <div class="control-group">
+          <label>输出格式</label>
+          <select id="outputFormat">
+            <option value="image/jpeg">JPEG（推荐照片）</option>
+            <option value="image/webp">WebP（体积最小）</option>
+            <option value="image/png">PNG（保留透明）</option>
+          </select>
+        </div>
+        <div class="control-group" style="display:flex;align-items:flex-end;">
+          <button id="compressBtn" class="primary-btn" type="button">开始压缩</button>
+        </div>
+      </div>
+
+      <div class="preview">
+        <div class="preview-card">
+          <h3>原图</h3>
+          <img id="originalImg" alt="原图预览">
+          <div class="info">大小：<span id="originalSize">-</span> ｜ 尺寸：<span id="originalDim">-</span></div>
+        </div>
+        <div class="preview-card">
+          <h3>压缩后</h3>
+          <img id="compressedImg" alt="压缩后预览">
+          <div class="info">大小：<span id="compressedSize">-</span> ｜ 尺寸：<span id="compressedDim">-</span></div>
+          <div style="margin-top:12px;">
+            <a id="downloadBtn" class="primary-btn" style="display:none;text-decoration:none;" download>下载压缩后图片</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="savings" class="savings" hidden></div>
+    </div>
+  </article>
+
+  <section class="faq">
+    <h2>常见问题</h2>
+    <details>
+      <summary>我的图片会上传到你们服务器吗？</summary>
+      <p>不会。整个压缩过程使用浏览器自带的 Canvas API 在你本地完成，图片不会发送到任何服务器，断网也能用。</p>
+    </details>
+    <details>
+      <summary>支持批量压缩吗？</summary>
+      <p>当前版本仅支持单张压缩，批量功能正在开发中。</p>
+    </details>
+    <details>
+      <summary>为什么 PNG 压缩效果不明显？</summary>
+      <p>PNG 是无损压缩格式，调节"压缩质量"对它影响很小。如果需要显著减小体积，建议输出格式选 JPEG 或 WebP。</p>
+    </details>
+    <details>
+      <summary>WebP 是什么？</summary>
+      <p>WebP 是 Google 推出的图片格式，相同画质下体积比 JPEG 小 25%-35%，主流浏览器都已支持，是网页图片的首选。</p>
+    </details>
+    <details>
+      <summary>图片有大小限制吗？</summary>
+      <p>理论上没有限制，但浏览器内存有限，建议单张不超过 50MB，否则可能压缩失败或卡顿。</p>
+    </details>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>© 2026 快用工具箱 · 让常用小工具触手可及</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const uploadArea = document.getElementById('uploadArea');
+  const fileInput = document.getElementById('fileInput');
+  const workspace = document.getElementById('workspace');
+  const quality = document.getElementById('quality');
+  const qualityValue = document.getElementById('qualityValue');
+  const maxWidth = document.getElementById('maxWidth');
+  const maxWidthValue = document.getElementById('maxWidthValue');
+  const outputFormat = document.getElementById('outputFormat');
+  const compressBtn = document.getElementById('compressBtn');
+  const originalImg = document.getElementById('originalImg');
+  const originalSize = document.getElementById('originalSize');
+  const originalDim = document.getElementById('originalDim');
+  const compressedImg = document.getElementById('compressedImg');
+  const compressedSize = document.getElementById('compressedSize');
+  const compressedDim = document.getElementById('compressedDim');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const savings = document.getElementById('savings');
+
+  let currentFile = null;
+  let currentImage = null;
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  uploadArea.addEventListener('click', () => fileInput.click());
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+  });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length) handleFile(e.target.files[0]);
+  });
+
+  quality.addEventListener('input', () => qualityValue.textContent = quality.value);
+  maxWidth.addEventListener('input', () => {
+    maxWidthValue.textContent = maxWidth.value === '0' ? '不缩放' : maxWidth.value + ' px';
+  });
+
+  compressBtn.addEventListener('click', compress);
+
+  function handleFile(file) {
+    if (!file.type.startsWith('image/')) {
+      alert('请选择图片文件');
+      return;
+    }
+    currentFile = file;
+    workspace.hidden = false;
+    originalSize.textContent = formatSize(file.size);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        currentImage = img;
+        originalImg.src = e.target.result;
+        originalDim.textContent = img.width + ' × ' + img.height;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function compress() {
+    if (!currentImage) return;
+    compressBtn.disabled = true;
+    compressBtn.textContent = '压缩中...';
+
+    const canvas = document.createElement('canvas');
+    let w = currentImage.width;
+    let h = currentImage.height;
+    const limit = parseInt(maxWidth.value, 10);
+    if (limit > 0 && w > limit) {
+      h = Math.round(h * (limit / w));
+      w = limit;
+    }
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(currentImage, 0, 0, w, h);
+
+    const format = outputFormat.value;
+    const q = parseFloat(quality.value);
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        alert('压缩失败，请尝试其他格式或更小的图片');
+        compressBtn.disabled = false;
+        compressBtn.textContent = '开始压缩';
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      compressedImg.src = url;
+      compressedSize.textContent = formatSize(blob.size);
+      compressedDim.textContent = w + ' × ' + h;
+
+      const ext = format.split('/')[1];
+      const baseName = currentFile.name.replace(/\.[^.]+$/, '');
+      downloadBtn.href = url;
+      downloadBtn.download = baseName + '_compressed.' + ext;
+      downloadBtn.style.display = 'inline-block';
+
+      const ratio = (1 - blob.size / currentFile.size) * 100;
+      if (ratio > 0) {
+        savings.hidden = false;
+        savings.textContent = '体积减少 ' + ratio.toFixed(1) + '%（' +
+          formatSize(currentFile.size - blob.size) + '）';
+      } else {
+        savings.hidden = false;
+        savings.textContent = '压缩后体积反而变大了，建议降低质量或更换格式（如改为 JPEG/WebP）';
+      }
+
+      compressBtn.disabled = false;
+      compressBtn.textContent = '开始压缩';
+    }, format, q);
+  }
+})();
+</script>
+</body>
+</html>
